@@ -4,21 +4,17 @@ from typing import Optional
 
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QHBoxLayout,
-    QPushButton, QLabel, QWidget, QStackedWidget,
+    QPushButton, QLabel, QStackedWidget,
     QLineEdit, QComboBox, QSlider, QDialog
 )
-from PyQt6.QtGui import QPixmap, QFont
-from PyQt6.QtCore import Qt
-print(">>> MAIN FILE LOADED <<<")
+print(">>> MAIN FILE LOADED <<<") # нужно было для проверки, чтобы понять, где происходит баг
 from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PyQt6.QtCore import Qt, QUrl, QPoint
-from PyQt6.QtGui import QPixmap, QFont, QPainter, QColor, QPen, QBrush
-from PyQt6.QtGui import QPainter, QColor, QPen, QBrush
+from PyQt6.QtWidgets import QScrollArea
+from PyQt6.QtGui import QPixmap, QFont
 from PyQt6.QtCore import QPointF
 from PyQt6.QtCore import QTimer
-from PyQt6.QtGui import QPainter, QPen, QBrush, QColor, QPixmap
 from PyQt6.QtCore import QRect
-from PyQt6.QtWidgets import QGridLayout
 from PyQt6.QtWidgets import QGridLayout, QWidget
 import math
 import time
@@ -93,7 +89,7 @@ class DraggableRoot(QLabel):
             if hasattr(main, "root_dropped_in_game"):
                 main.root_dropped_in_game(self)
         # не вызываем super
-# ---------- 1. Интерфейсы ----------
+# 1. Интерфейсы
 
 class ISaveable(ABC):
     @abstractmethod
@@ -115,7 +111,7 @@ class ICombatant(ABC):
         pass
 
 
-# ---------- 2. Логика ----------
+# 2. Логика
 
 class Inventory:
     def __init__(self):
@@ -154,7 +150,7 @@ class PlayerCombatant(ICombatant):
         return self.hp > 0
 
 
-# ---------- 3. Главное меню ----------
+# 3. Главное меню
 
 class MainMenu(QWidget):
     def __init__(self, start_callback, exit_callback, open_settings_callback, open_lore_callback):
@@ -230,7 +226,7 @@ class MainMenu(QWidget):
             self.btn_exit.setText("ВЫХОД")
 
 
-# ---------- 4. Окно настроек ----------
+# 4. Окно настроек
 
 class SettingsDialog(QDialog):
     def __init__(
@@ -288,7 +284,7 @@ class SettingsDialog(QDialog):
         self.setLayout(layout)
 
 
-# ---------- 5. Основное окно игры ----------
+#  5. Основное окно игры
 class LoreDialog(QDialog):
     def __init__(self, parent=None, lang: str = "ru"):
         super().__init__(parent)
@@ -422,6 +418,7 @@ class FairyQuestGame(QMainWindow):
     def init_ui(self):
         self.setWindowTitle("Сказочный квест: Легенды леса")
         self.resize(1000, 800)
+        self.setMinimumSize(960, 720)
 
         self.stack = QStackedWidget()
         self.setCentralWidget(self.stack)
@@ -430,17 +427,16 @@ class FairyQuestGame(QMainWindow):
             self.start_game,
             sys.exit,
             self.open_settings_dialog,
-            self.open_lore_dialog,  # новый колбэк
+            self.open_lore_dialog,
         )
         self.stack.addWidget(self.menu_screen)
 
-        # --- Экран игры ---
+        # Экран игры
         self.game_widget = QWidget()
         main_v_layout = QVBoxLayout()
 
-        # Верхняя панель: статы + иконка оружия
+        # Верхняя панель
         top_layout = QHBoxLayout()
-
         self.stats_label = QLabel()
         self.stats_label.setFont(QFont("Arial", 11, QFont.Weight.Bold))
 
@@ -458,13 +454,12 @@ class FairyQuestGame(QMainWindow):
         top_layout.addWidget(self.weapon_icon_label, alignment=Qt.AlignmentFlag.AlignRight)
         top_layout.addWidget(QLabel("Зелье:"), alignment=Qt.AlignmentFlag.AlignRight)
         top_layout.addWidget(self.potion_icon_label, alignment=Qt.AlignmentFlag.AlignRight)
-
         main_v_layout.addLayout(top_layout)
 
         # Область для фона и спрайтов
         self.screen_area = QWidget()
-        self.screen_area.setMinimumHeight(400)
-        self.screen_area.setMaximumHeight(540)
+        self.screen_area.setMinimumHeight(320)
+        self.screen_area.setMaximumHeight(360)
         self.screen_area.setMaximumWidth(960)
 
         screen_layout = QVBoxLayout()
@@ -472,57 +467,64 @@ class FairyQuestGame(QMainWindow):
 
         self.bg_label = QLabel()
         self.bg_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.bg_label.setScaledContents(True)
+        self.bg_label.setScaledContents(False)
 
-        # Лейбл для графика поверх фона
+        # График, спрайты и т.д.
         self.chart_label = QLabel(self.bg_label)
         self.chart_label.setScaledContents(True)
         self.chart_label.hide()
 
-        # Леший как оверлей поверх фона
         self.leshy_label = QLabel(self.bg_label)
         self.leshy_label.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.leshy_label.setStyleSheet("background: transparent;")
         self.leshy_label.setScaledContents(True)
         self.leshy_label.hide()
 
-        # Чёртик как оверлей поверх фона
         self.imp_label = QLabel(self.bg_label)
         self.imp_label.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.imp_label.setStyleSheet("background: transparent;")
         self.imp_label.setScaledContents(True)
         self.imp_label.hide()
 
-        # Водяной как оверлей поверх фона водоёма
         self.vodyanoy_label = QLabel(self.bg_label)
         self.vodyanoy_label.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.vodyanoy_label.setStyleSheet("background: transparent;")
         self.vodyanoy_label.setScaledContents(True)
         self.vodyanoy_label.hide()
+
         self.evil_wizard_label = QLabel(self.bg_label)
         self.evil_wizard_label.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.evil_wizard_label.setStyleSheet("background: transparent;")
         self.evil_wizard_label.setScaledContents(True)
         self.evil_wizard_label.hide()
-        # Лейбл для графика финальной битвы
-        self.chart_label = QLabel(self.bg_label)
-        self.chart_label.setScaledContents(True)
-        self.chart_label.hide()
 
         screen_layout.addWidget(self.bg_label)
         self.screen_area.setLayout(screen_layout)
-
         main_v_layout.addWidget(self.screen_area, alignment=Qt.AlignmentFlag.AlignHCenter)
 
-        # Текст и кнопки
+        # Новый блок с прокруткой для текста и кнопок для три в ряд
+        self.text_btn_widget = QWidget()
+        text_btn_layout = QVBoxLayout()
+        text_btn_layout.setContentsMargins(10, 10, 10, 10)
+        text_btn_layout.setSpacing(10)
+
         self.text_label = QLabel()
         self.text_label.setWordWrap(True)
         self.text_label.setFont(QFont("Georgia", 13))
-        self.text_label.setContentsMargins(10, 10, 10, 0)
-        main_v_layout.addWidget(self.text_label)
+        self.text_label.setContentsMargins(0, 0, 0, 0)
 
         self.btn_container = QVBoxLayout()
-        main_v_layout.addLayout(self.btn_container)
+
+        text_btn_layout.addWidget(self.text_label)
+        text_btn_layout.addLayout(self.btn_container)
+        self.text_btn_widget.setLayout(text_btn_layout)
+
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setFrameShape(QScrollArea.Shape.NoFrame)
+        self.scroll_area.setWidget(self.text_btn_widget)
+
+        main_v_layout.addWidget(self.scroll_area)
 
         self.game_widget.setLayout(main_v_layout)
         self.stack.addWidget(self.game_widget)
@@ -532,7 +534,7 @@ class FairyQuestGame(QMainWindow):
         self.stack.setCurrentWidget(self.menu_screen)
         self.stack.setCurrentWidget(self.menu_screen)
 
-        # чистим состояние игры
+        # состояние игры
         self.show_leshy(False)
         self.show_imp(False)
         self.show_vodyanoy(False)
@@ -545,7 +547,7 @@ class FairyQuestGame(QMainWindow):
             self.text_label.clear()
 
         self.clear_btns()
-    # ---------- Настройки / мультимедиа ----------
+    #  Настройки / мультимедиа
     def open_lore_dialog(self):
         lang = self.session.language  # "ru" или "en"
         dlg = LoreDialog(self, lang=lang)
@@ -675,7 +677,7 @@ class FairyQuestGame(QMainWindow):
         except Exception:
             return []
 
-    # ---------- Игровая логика: пролог и Леший ----------
+    # Игровая логика: пролог и Леший
 
     def start_game(self):
         name = self.menu_screen.name_input.text()
@@ -818,7 +820,7 @@ class FairyQuestGame(QMainWindow):
         self.clear_btns()
         self.add_btn("Перейти в лавку снаряжения", self.open_shop)
 
-    # ---------- Лавка ----------
+    # Лавка
 
     def open_shop(self):
         self.show_leshy(False)
@@ -852,7 +854,7 @@ class FairyQuestGame(QMainWindow):
         self.update_weapon_icon()
         self.prepare_battle()
 
-    # ---------- Переход к бою с чёртиком (клик) ----------
+    # Переход к бою с чёртиком (клик)
 
     def prepare_battle(self):
         self.clear_btns()
@@ -893,7 +895,7 @@ class FairyQuestGame(QMainWindow):
         )
         self.text_label.setText(base + extra)
 
-    # ---------- Клики мышью ----------
+    #  Клики мышью
 
     def mousePressEvent(self, event):
         super().mousePressEvent(event)
@@ -908,7 +910,7 @@ class FairyQuestGame(QMainWindow):
             if self.imp_label.geometry().contains(local_pos):
                 self.player_hit_imp()
 
-    # ---------- Логика удара по чёртику ----------
+    # Логика удара по чёртику
 
     def player_hit_imp(self):
         if self.imp_hp <= 0 or not self.in_imp_battle:
@@ -967,8 +969,12 @@ class FairyQuestGame(QMainWindow):
                 "Однако лес не сдаётся — чёртик всё ещё здесь, и у тебя есть шанс попробовать ещё раз."
             )
             self.add_btn("Попробовать сразиться ещё раз", self.start_imp_battle_again)
+
     def start_imp_battle_again(self):
-        # перезапускаем бой, не трогая остальную историю
+        # сбрасываем здоровье игрока к стартовому значению
+        self.session.hp = 5
+        self.player_hp = self.session.hp
+
         self.in_imp_battle = False
         self.imp_hp = 0
         self.imp_max_hp = 0
@@ -985,12 +991,10 @@ class FairyQuestGame(QMainWindow):
             "Кликай по чёртику, чтобы победить его, пока он не одолел тебя."
         )
 
-        # здесь вызови ту же функцию, которой ты запускаешь бой в первый раз
-        # если она у тебя называется, например, start_imp_battle:
         self.start_imp_battle()
 
 
-    # ---------- Путь к Яге и Водяной ----------
+    # Путь к Яге и Водяной
 
     def go_to_yaga(self):
         self.show_leshy(False)
@@ -1030,7 +1034,7 @@ class FairyQuestGame(QMainWindow):
         self.add_btn("Принять испытание Водяного", self.start_riddle_quiz)
         self.add_btn("Отказатьcя и уйти", self.leave_without_algae)
 
-    # ---------- Загадки Водяного ----------
+    # Загадки Водяного
 
     def start_riddle_quiz(self):
         self.riddles = [
@@ -1164,9 +1168,9 @@ class FairyQuestGame(QMainWindow):
                 )
 
             self.add_btn("Идти к Бабе Яге", self.go_to_baba_yaga)
-            return  # дальше не идём
+            return
 
-        # ----- success == False: есть ошибки -----
+        # Есть ошибки
 
         if self.riddle_mistakes == 1 and not self.vodyanoy_reward_given:
             # одна ошибка — водоросли без бонусов
@@ -1226,7 +1230,7 @@ class FairyQuestGame(QMainWindow):
         )
         self.add_btn("Вернуться к Водяному", self.go_to_yaga)
     def go_to_baba_yaga(self):
-        self.set_background("forest1.jpg")  # можешь сделать отдельный фон избушки
+        self.set_background("forest1.jpg")
         self.show_leshy(False)
         self.show_imp(False)
         self.show_vodyanoy(False)
@@ -1276,7 +1280,7 @@ class FairyQuestGame(QMainWindow):
         self.add_btn("Приступить к испытаниям", self.start_alchemy_tests)
 
     def start_roots_sort_game(self):
-        # перед каждым запуском сортировки аккуратно убираем всё старое
+        # перед каждым запуском сортировки аккуратно убирает всё старое
         if self.roots_left_basket is not None:
             self.roots_left_basket.deleteLater()
             self.roots_left_basket = None
@@ -1327,7 +1331,7 @@ class FairyQuestGame(QMainWindow):
             return
 
         # центр корня в координатах bg_label
-        center_in_bg = root.mapToParent(root.rect().center())  # parent = bg_label
+        center_in_bg = root.mapToParent(root.rect().center())
 
         left_rect = self.roots_left_basket.geometry()
         right_rect = self.roots_right_basket.geometry()
@@ -1413,7 +1417,7 @@ class FairyQuestGame(QMainWindow):
             "Следи за стрелками и успевай крутить в нужную сторону!"
         )
 
-        # создаём последовательность: немного случайная, но с обеими сторонами
+        # создаёт последовательность: немного случайная, но с обеими сторонами
         base_seq = ["cw", "cw", "ccw", "cw", "ccw"]
         random.shuffle(base_seq)
         self.stir_sequence = base_seq
@@ -1657,18 +1661,15 @@ class FairyQuestGame(QMainWindow):
             self.add_btn("Закончить дела с Кощеем", self.after_koschei_shop)
             return
 
-        # списываем золото
+        # списывает золото
         self.session.inventory.gold -= price
-
-        # очень простой эффект: кладём название в инвентарь/поля
         if item["name"] == "Костяной оберег":
             self.session.inventory.strength += 1
         elif item["name"] == "Серебряный клинок":
             self.session.inventory.strength += 2
             self.session.inventory.weapon = "Серебряный клинок"
         elif item["name"] == "Зелье ясновидения":
-            # можешь завести отдельный флаг для финальной битвы
-            self.session.inventory.algae += 1  # как пример “магического ресурса”
+            self.session.inventory.algae += 1
 
         self.update_stats()
         self.clear_btns()
@@ -1684,7 +1685,7 @@ class FairyQuestGame(QMainWindow):
     def after_koschei_shop(self):
         """Герой закончил дела с Кощеем и идёт к Лешему с зельем."""
         self.clear_btns()
-        self.set_background("forest_mist.jpg")  # туманный лес
+        self.set_background("forest_mist.jpg")
         self.show_leshy(True)
         self.show_imp(False)
         self.show_vodyanoy(False)
@@ -1743,7 +1744,7 @@ class FairyQuestGame(QMainWindow):
 
         karma = self.session.karma
         weapon = self.session.inventory.weapon
-        potion_img = self.session.inventory.potion_image  # у тебя так хранится зелье
+        potion_img = self.session.inventory.potion_image
         has_algae = (self.session.inventory.algae > 0)
         helped_yaga = self.alchemy_done
 
@@ -1765,17 +1766,19 @@ class FairyQuestGame(QMainWindow):
             )
 
         # реплики под выбор предмета Кощея
-        if weapon == "Костяной оберег":
+        weapon_norm = str(weapon).strip().lower()
+
+        if weapon_norm == "костяной оберег":
             intro += (
                 "\n\nКостяной оберег на груди тяжелеет, впитывая каждое колебание тёмной магии.\n"
                 "Он глухо звенит, когда колдун тянется к трещине тьмы — будто предупреждает о грядущем ударе."
             )
-        elif weapon == "Серебряный клинок":
+        elif weapon_norm == "серебряный клинок":
             intro += (
                 "\n\nСеребряный клинок дрожит в твоей руке, подпевая каждому шороху чар колдуна.\n"
                 "Сила Кощея рвётся наружу, готовая рассечь тьму."
             )
-        elif weapon == "Зелье ясновидения":
+        elif weapon_norm == "зелье ясновидения":
             intro += (
                 "\n\nФлакон с Зельем ясновидения холодит ладонь.\n"
                 "В густой жидкости вспыхивают образы слабых мест колдуна, но у тебя будет лишь один шанс использовать это знание."
@@ -1785,26 +1788,23 @@ class FairyQuestGame(QMainWindow):
                 "\n\nУ тебя нет особых даров Кощея — только то, что удалось собрать в дороге.\n"
                 "Но даже этого может хватить, если не отступать."
             )
+        # финал без описания Яги и Водяного, а то занимают слишком много места
+        # if helped_yaga:
+        #     intro += (
+        #         "\n\nГде‑то внутри ещё отзывается вкус зелья Бабы Яги —"
+        #         "её магия тонкой нитью поддерживает твои силы."
+        #     )
 
-        # вклад Яги / Водяного
-        if helped_yaga:
-            intro += (
-                "\n\nГде‑то внутри ещё отзывается вкус зелья Бабы Яги — "
-                "её магия тонкой нитью поддерживает твои силы."
-            )
-
-        if has_algae:
-            intro += (
-                "\n\nОт водорослей Водяного тянет сырой прохладой, "
-                "и часть тьмы вокруг трещины гаснет, не дотягиваясь до тебя."
-            )
-
+        # if has_algae:
+        #     intro += (
+        #         "\n\nОт водорослей Водяного тянет сырой прохладой,"
+        #         "и часть тьмы вокруг трещины гаснет, не дотягиваясь до тебя."
+        #     )
         intro += "\n\nВскоре начнётся решающее столкновение. Ошибаться уже нельзя."
 
         self.text_label.setText(intro)
-        self.add_btn("Начать решающую битву", self.start_match3_battle)
     def init_match3_board(self):
-        symbols = ["🌿", "🔥", "💧", "🌙", "⭐"]  # можно заменить на буквы
+        symbols = ["🌿", "🔥", "💧", "🌙", "⭐"]
         self.match3_board = [[None for _ in range(self.match3_cols)] for _ in range(self.match3_rows)]
 
         for r in range(self.match3_rows):
@@ -1831,7 +1831,7 @@ class FairyQuestGame(QMainWindow):
         container = QWidget()
         container_layout = QGridLayout(container)
         container_layout.setContentsMargins(0, 0, 0, 0)
-        container_layout.setSpacing(2)  # расстояние между кнопками
+        container_layout.setSpacing(2)
 
         self.match3_buttons = [[None for _ in range(self.match3_cols)] for _ in range(self.match3_rows)]
 
@@ -1848,7 +1848,7 @@ class FairyQuestGame(QMainWindow):
                 self.match3_buttons[r][c] = btn
                 container_layout.addWidget(btn, r, c)
 
-        # фиксируем примерную ширину под сетку (6 * 50 + зазоры)
+        # фиксирует примерную ширину под сетку (6 * 50 + зазоры)
         container.setFixedWidth(6 * 50 + 5 * 2 + 10)
         self.btn_layout.addWidget(container, alignment=Qt.AlignmentFlag.AlignHCenter)
     def handle_match3_click(self, r, c):
@@ -1938,7 +1938,7 @@ class FairyQuestGame(QMainWindow):
         self.match3_damage_done += damage
         self.match3_damage_history.append(damage)
 
-        # удаляем совпавшие
+        # удаляет совпавшие
         for r, c in matches:
             self.match3_board[r][c] = None
 
@@ -2043,8 +2043,6 @@ class FairyQuestGame(QMainWindow):
         )
 
         self.text_label.setText(base_text + stats_text)
-
-        # дальше можно звать кармический финал
         self.add_btn("Посмотреть, что будет дальше", self.show_karma_ending)
 
     def show_karma_ending(self):
@@ -2053,7 +2051,7 @@ class FairyQuestGame(QMainWindow):
         self.show_evil_wizard(False)
 
         if karma < 0:
-            self.set_background("dark_forest.jpg")  # мрачный лес
+            self.set_background("dark_forest.jpg")
             self.text_label.setText(
                 "Лес исцелен, но помнит все твои жестокие и эгоистичные поступки.\n"
                 "Корни обвиваются вокруг тропинок, не отпуская тебя прочь.\n"
@@ -2189,7 +2187,7 @@ class FairyQuestGame(QMainWindow):
         self.stack.setCurrentIndex(0)
 
 
-    # ---------- Фон и спрайты ----------
+    # Фон и спрайты
 
     def set_background(self, image_name: str):
         print("SET_BACKGROUND CALLED WITH:", image_name)
@@ -2333,7 +2331,7 @@ class FairyQuestGame(QMainWindow):
             self.roots_left_basket.move(left_x, y)
             self.roots_right_basket.move(right_x, y)
 
-    # ---------- Вспомогательные ----------
+    # Вспомогательные
 
     def clear_btns(self):
         while self.btn_layout.count():
